@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>⛽ แผนที่ปั๊มน้ำมัน พิษณุโลก</title>
+<meta name="description" content="แผนที่ปั๊มน้ำมันในจังหวัดพิษณุโลก รัศมี 15 กม. — PTT, PT, Shell, Bangchak, Caltex รวม 26 สาขา">
+<meta property="og:title"       content="⛽ แผนที่ปั๊มน้ำมัน พิษณุโลก">
+<meta property="og:description" content="PTT · PT · Shell · Bangchak · Caltex — 26 สาขา รัศมี 15 กม.">
+<meta property="og:image"       content="https://raw.githubusercontent.com/YOUR_USERNAME/phitsanulok-gasmap/main/preview.png">
+<meta property="og:type"        content="website">
+<meta name="twitter:card"       content="summary_large_image">
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Sarabun',Arial,sans-serif;overflow:hidden;background:#040c18;color:#e2e8f0}
+
+/* ── TOPBAR ── */
+#bar{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:rgba(4,12,26,0.97);
+  border-bottom:1px solid rgba(96,165,250,0.15);
+  padding:6px 12px 5px;
+}
+.bar-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap;padding:2px 0}
+.bar-row+.bar-row{border-top:1px solid rgba(255,255,255,0.05);margin-top:3px;padding-top:5px}
+.blabel{font-size:9px;color:#334155;letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;padding:0 2px;flex-shrink:0}
+h1{font-size:15px;font-weight:800;white-space:nowrap;
+  background:linear-gradient(90deg,#38bdf8,#818cf8);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-right:2px}
+
+/* brand btn */
+.fb{padding:4px 10px;border-radius:7px;border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.05);color:#64748b;
+  font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+.fb:hover{background:rgba(255,255,255,0.1);color:#e2e8f0}
+.fb.on{border-color:var(--c);background:rgba(var(--cr),0.13);color:var(--c)}
+
+/* fuel btn */
+.ff{display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:7px;border:1px solid rgba(255,255,255,0.1);
+  background:rgba(255,255,255,0.04);color:#64748b;
+  font-family:inherit;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+.ff:hover{background:rgba(255,255,255,0.1);color:#e2e8f0}
+.ff.on{border-color:var(--fc);background:rgba(var(--fr),0.14);color:var(--fc)}
+.fdot-sm{width:8px;height:8px;border-radius:50%;background:var(--fc);flex-shrink:0}
+.ff-ev.on{border-color:#a78bfa;background:rgba(167,139,250,0.13);color:#a78bfa}
+.ff-clr{color:#64748b}
+.ff-clr:hover{color:#f87171;border-color:rgba(248,113,113,0.3)}
+
+#cnt{font-size:10px;color:#334155;background:rgba(255,255,255,0.04);
+  border:1px solid rgba(255,255,255,0.07);border-radius:6px;padding:3px 8px;white-space:nowrap;margin-left:auto}
+
+/* ── MAP ── */
+#map{position:fixed;left:0;right:0;bottom:0;top:80px}
+
+/* ── LEGEND ── */
+#leg{position:fixed;bottom:26px;left:10px;z-index:999;
+  background:rgba(4,12,26,0.95);border:1px solid rgba(96,165,250,0.12);
+  border-radius:12px;padding:11px 13px;min-width:168px;
+  box-shadow:0 4px 20px rgba(0,0,0,.5)}
+.lt{font-size:8px;color:#334155;letter-spacing:2px;text-transform:uppercase;margin-bottom:7px}
+.lr{display:flex;align-items:center;gap:7px;margin-bottom:5px;cursor:pointer;
+  border-radius:6px;padding:2px 4px;transition:background .15s}
+.lr:hover{background:rgba(255,255,255,0.05)}
+.ld{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.ln{font-size:11px;font-weight:700}.lsub{font-size:9px;color:#475569;margin-left:2px}
+.lhr{height:1px;background:rgba(255,255,255,0.06);margin:7px 0}
+.lf{display:flex;align-items:center;gap:6px;margin-bottom:4px;cursor:pointer;
+  border-radius:5px;padding:2px 4px;transition:background .15s}
+.lf:hover{background:rgba(255,255,255,0.05)}
+.lfd{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.lfn{font-size:10px;color:#94a3b8;transition:color .15s}
+.lf.on .lfn{color:#e2e8f0;font-weight:700}
+.lf.on .lfd{box-shadow:0 0 6px currentColor}
+
+/* ── POPUP ── */
+.leaflet-popup-content-wrapper{
+  background:rgba(5,14,30,0.98)!important;border:1px solid rgba(96,165,250,0.15)!important;
+  border-radius:12px!important;box-shadow:0 8px 32px rgba(0,0,0,.7)!important;padding:0!important}
+.leaflet-popup-content{margin:0!important;min-width:230px;max-width:280px}
+.leaflet-popup-tip{background:rgba(5,14,30,0.98)!important}
+.leaflet-popup-close-button{color:#475569!important;top:8px!important;right:10px!important;font-size:16px!important}
+.pu{padding:14px 16px}
+.pub{font-size:9px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:2px}
+.pun{font-size:15px;font-weight:800;color:#e2e8f0;line-height:1.2;margin-bottom:3px}
+.pua{font-size:10px;color:#475569;margin-bottom:7px}
+.pum{display:flex;gap:12px;font-size:11px;color:#64748b;margin-bottom:8px;flex-wrap:wrap}
+.puf{display:flex;flex-wrap:wrap;gap:3px}
+.fc{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:16px;font-size:10px;font-weight:700;margin:2px;transition:box-shadow .2s,transform .2s}
+.fc.hi{transform:scale(1.08)}
+.evc{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:16px;
+  background:rgba(124,58,237,.12);border:1.5px solid rgba(167,139,250,.35);
+  color:#a78bfa;font-size:10px;font-weight:700;margin:2px}
+.evc.hi{box-shadow:0 0 8px rgba(167,139,250,0.5);transform:scale(1.08)}
+.gmlink{display:block;margin-top:8px;padding:6px;border-radius:8px;text-align:center;
+  background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.2);
+  color:#38bdf8;font-size:11px;font-weight:700;text-decoration:none;transition:background .15s}
+.gmlink:hover{background:rgba(56,189,248,0.18)}
+
+/* ── MARKER ── */
+.mi{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:8px;font-weight:800;color:#fff;border:2.5px solid;
+  box-shadow:0 2px 12px rgba(0,0,0,.6);position:relative;cursor:pointer;transition:transform .15s,opacity .2s,box-shadow .2s}
+.mi:hover{transform:scale(1.18)}
+.mi.dim{opacity:0.2}
+.mi.match{box-shadow:0 0 14px 3px rgba(255,255,255,0.25),0 2px 12px rgba(0,0,0,.6)}
+.fdots{position:absolute;top:-9px;left:50%;transform:translateX(-50%);display:flex;gap:2px}
+.fdot{width:6px;height:6px;border-radius:50%;border:1px solid rgba(0,0,0,.4);transition:transform .15s,box-shadow .15s}
+.fdot.hi{transform:scale(1.5);box-shadow:0 0 5px rgba(255,255,255,0.8)}
+.evbg{position:absolute;top:-5px;right:-5px;width:13px;height:13px;border-radius:50%;
+  background:#581c87;border:1.5px solid #a855f7;font-size:7px;
+  display:flex;align-items:center;justify-content:center;color:#e9d5ff}
+.rlab{background:transparent!important;border:none!important;box-shadow:none!important;
+  color:rgba(56,189,248,.5);font-size:10px;font-family:'Sarabun',Arial,sans-serif;pointer-events:none}
+.rlab::before{display:none!important}
+
+/* ── NO RESULT ── */
+#nores{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);z-index:2000;
+  background:rgba(5,14,30,0.96);border:1px solid rgba(239,68,68,0.25);
+  border-radius:14px;padding:18px 26px;text-align:center;display:none;
+  box-shadow:0 8px 32px rgba(0,0,0,.6);pointer-events:none}
+#nores .ni{font-size:32px;margin-bottom:6px}
+#nores .nm{font-size:14px;font-weight:800;color:#e2e8f0;margin-bottom:3px}
+#nores .nd{font-size:11px;color:#64748b}
+</style>
+</head>
+<body>
+
+<!-- ── TOP BAR ── -->
+<div id="bar">
+  <!-- Row 1: brand -->
+  <div class="bar-row">
+    <h1>⛽ ปั๊มน้ำมัน พิษณุโลก</h1>
+    <span class="blabel">แบรนด์:</span>
+    <button class="fb on" id="fb-ALL"      style="--c:#38bdf8;--cr:56,189,248"  onclick="setBrand('ALL')">ทั้งหมด</button>
+    <button class="fb"    id="fb-PTT"      style="--c:#22c55e;--cr:34,197,94"   onclick="setBrand('PTT')">🟢 PTT</button>
+    <button class="fb"    id="fb-PT"       style="--c:#f97316;--cr:249,115,22"  onclick="setBrand('PT')">🟠 PT</button>
+    <button class="fb"    id="fb-Shell"    style="--c:#ef4444;--cr:239,68,68"   onclick="setBrand('Shell')">🔴 Shell</button>
+    <button class="fb"    id="fb-Bangchak" style="--c:#f59e0b;--cr:245,158,11"  onclick="setBrand('Bangchak')">🟡 Bangchak</button>
+    <button class="fb"    id="fb-Caltex"   style="--c:#60a5fa;--cr:96,165,250"  onclick="setBrand('Caltex')">🔵 Caltex</button>
+    <div id="cnt">26 สาขา</div>
+  </div>
+  <!-- Row 2: fuel type -->
+  <div class="bar-row">
+    <span class="blabel">น้ำมัน:</span>
+    <button class="ff" id="ff-D"   style="--fc:#1d4ed8;--fr:29,78,216"    onclick="toggleFuel('D')">
+      <span class="fdot-sm"></span>ดีเซล
+    </button>
+    <button class="ff" id="ff-95"  style="--fc:#dc2626;--fr:220,38,38"   onclick="toggleFuel('95')">
+      <span class="fdot-sm"></span>แก๊สโซฮอล 95
+    </button>
+    <button class="ff" id="ff-91"  style="--fc:#ca8a04;--fr:202,138,4"   onclick="toggleFuel('91')">
+      <span class="fdot-sm"></span>แก๊สโซฮอล 91
+    </button>
+    <button class="ff" id="ff-E20" style="--fc:#16a34a;--fr:22,163,74"   onclick="toggleFuel('E20')">
+      <span class="fdot-sm"></span>E20
+    </button>
+    <button class="ff" id="ff-E85" style="--fc:#7c3aed;--fr:124,58,237"  onclick="toggleFuel('E85')">
+      <span class="fdot-sm"></span>E85
+    </button>
+    <button class="ff ff-ev" id="ff-EV" onclick="toggleFuel('EV')">
+      ⚡ EV Charging
+    </button>
+    <button class="ff ff-clr" onclick="clearFuels()">✕ ล้างตัวกรอง</button>
+  </div>
+</div>
+
+<!-- MAP -->
+<div id="map"></div>
+
+<!-- LEGEND -->
+<div id="leg">
+  <div class="lt">แบรนด์</div>
+  <div class="lr" onclick="setBrand('PTT')">    <div class="ld" style="background:#22c55e"></div><span class="ln" style="color:#22c55e">PTT</span><span class="lsub">9 สาขา</span></div>
+  <div class="lr" onclick="setBrand('PT')">     <div class="ld" style="background:#f97316"></div><span class="ln" style="color:#f97316">PT</span> <span class="lsub">6 สาขา</span></div>
+  <div class="lr" onclick="setBrand('Shell')">  <div class="ld" style="background:#ef4444"></div><span class="ln" style="color:#ef4444">Shell</span><span class="lsub">5 สาขา</span></div>
+  <div class="lr" onclick="setBrand('Bangchak')"><div class="ld" style="background:#f59e0b"></div><span class="ln" style="color:#f59e0b">Bangchak</span><span class="lsub">4 สาขา</span></div>
+  <div class="lr" onclick="setBrand('Caltex')"> <div class="ld" style="background:#60a5fa"></div><span class="ln" style="color:#60a5fa">Caltex</span><span class="lsub">2 สาขา</span></div>
+  <div class="lhr"></div>
+  <div class="lt">ประเภทน้ำมัน</div>
+  <div class="lf" id="lf-D"   onclick="toggleFuel('D')">  <div class="lfd" style="background:#1d4ed8"></div><div class="lfn">ดีเซล</div></div>
+  <div class="lf" id="lf-95"  onclick="toggleFuel('95')"> <div class="lfd" style="background:#dc2626"></div><div class="lfn">แก๊สโซฮอล 95</div></div>
+  <div class="lf" id="lf-91"  onclick="toggleFuel('91')"> <div class="lfd" style="background:#ca8a04"></div><div class="lfn">แก๊สโซฮอล 91</div></div>
+  <div class="lf" id="lf-E20" onclick="toggleFuel('E20')"><div class="lfd" style="background:#16a34a"></div><div class="lfn">E20</div></div>
+  <div class="lf" id="lf-E85" onclick="toggleFuel('E85')"><div class="lfd" style="background:#7c3aed"></div><div class="lfn">E85</div></div>
+  <div class="lf" id="lf-EV"  onclick="toggleFuel('EV')">
+    <div style="width:9px;height:9px;border-radius:50%;background:#581c87;border:1px solid #a855f7;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:5px;color:#e9d5ff">⚡</div>
+    <div class="lfn">EV Charging</div>
+  </div>
+</div>
+
+<!-- no result -->
+<div id="nores">
+  <div class="ni">🔍</div>
+  <div class="nm">ไม่พบสาขาที่ตรงกัน</div>
+  <div class="nd">ลองเปลี่ยนตัวกรองแบรนด์หรือประเภทน้ำมัน</div>
+</div>
+
+<script>
+var B={
+  PTT:     {bg:"#14532d",bo:"#22c55e",tx:"PTT",co:"#22c55e"},
+  PT:      {bg:"#7c2d12",bo:"#f97316",tx:"PT", co:"#f97316"},
+  Shell:   {bg:"#7f1d1d",bo:"#ef4444",tx:"SHL",co:"#ef4444"},
+  Bangchak:{bg:"#78350f",bo:"#f59e0b",tx:"BCK",co:"#f59e0b"},
+  Caltex:  {bg:"#1e3a8a",bo:"#60a5fa",tx:"CTX",co:"#60a5fa"},
+};
+var FC={D:"#1d4ed8","95":"#dc2626","91":"#ca8a04",E20:"#16a34a",E85:"#7c3aed"};
+var FCR={D:"29,78,216","95":"220,38,38","91":"202,138,4",E20:"22,163,74",E85:"124,58,237"};
+var FL={D:"ดีเซล","95":"G95","91":"G91",E20:"E20",E85:"E85"};
+
+var ST=[
+  {br:"PTT",nm:"PTT หอนาฬิกา",         la:16.8124,ln:100.2621,fu:["D","95","91","E20"],ev:1,h:"05:00–22:00",r:4.3,ad:"ถ.บรมไตรโลกนาถ",gm:"https://maps.google.com/?cid=7195658729364442415"},
+  {br:"PTT",nm:"PTT บึงพระ",             la:16.8196,ln:100.2797,fu:["D","95","91"],      ev:0,h:"06:00–20:00",r:4.3,ad:"ซ.รักชาติ 12",  gm:"https://maps.google.com/?cid=17888729575407911319"},
+  {br:"PTT",nm:"PTT สิงหวัฒน์",         la:16.8247,ln:100.2575,fu:["D","95","91","E20"],ev:1,h:"24 ชั่วโมง", r:4.1,ad:"ถ.สิงหวัฒน์",  gm:"https://maps.google.com/?cid=1460187642798847219"},
+  {br:"PTT",nm:"PTT มิตรภาพ (ขาเข้า)", la:16.8191,ln:100.2864,fu:["D","95","91","E20"],ev:0,h:"24 ชั่วโมง", r:4.1,ad:"ถ.มิตรภาพ",    gm:"https://maps.google.com/?cid=5914627762177744887"},
+  {br:"PTT",nm:"PTT วัฒนาออยล์",        la:16.8296,ln:100.2666,fu:["D","95","91"],      ev:0,h:"24 ชั่วโมง", r:3.8,ad:"ถ.ธรรมบูชา",   gm:"https://maps.google.com/?cid=13352842596382498358"},
+  {br:"PTT",nm:"PTT สีหราชปิโตรเลียม",  la:16.8148,ln:100.2368,fu:["D","95","91","E20"],ev:1,h:"06:00–21:00",r:4.3,ad:"ต.วัดจันทร์",   gm:"https://maps.google.com/?cid=2240639259178665121"},
+  {br:"PTT",nm:"PTT ทรัพย์รุ่งเรือง",  la:16.8279,ln:100.2651,fu:["D","95","91"],      ev:0,h:"06:00–22:00",r:3.7,ad:"ถ.อากาศดำรัส",  gm:"https://maps.google.com/?cid=11505006759742175141"},
+  {br:"PTT",nm:"PTT PTTOR สาโมคแห",     la:16.8177,ln:100.3190,fu:["D","95","91","E20","E85"],ev:1,h:"24 ชั่วโมง",r:4.5,ad:"ต.สมอแข", gm:"https://maps.google.com/?cid=16722204274238617567"},
+  {br:"PTT",nm:"PTT เลี่ยงเมือง",       la:16.7599,ln:100.2211,fu:["D","95","91","E20"],ev:1,h:"24 ชั่วโมง", r:4.3,ad:"ต.ท่าโพ",      gm:"https://maps.google.com/?cid=3242949218932975395"},
+  {br:"PT", nm:"PT ไทยยนตร์ยนต์ ท่าทอง",la:16.7920,ln:100.2096,fu:["D","95","91","E20"],ev:0,h:"24 ชั่วโมง",r:3.9,ad:"ถ.เลี่ยงเมือง",gm:"https://maps.app.goo.gl/ptThatong"},
+  {br:"PT", nm:"PT ท่าโพ",               la:16.7592,ln:100.1898,fu:["D","95","91","E20"],ev:1,h:"24 ชั่วโมง",r:4.4,ad:"ถ.ท่าโพ",       gm:"https://maps.app.goo.gl/ptThapo"},
+  {br:"PT", nm:"PT พิษณุโลก 3",          la:16.7606,ln:100.1923,fu:["D","95","91"],      ev:1,h:"24 ชั่วโมง",r:4.5,ad:"เลี่ยงเมืองขาออก",gm:"https://maps.app.goo.gl/pt3"},
+  {br:"PT", nm:"PT ปากโทก",              la:16.8774,ln:100.2450,fu:["D","95","91"],      ev:0,h:"05:00–22:00",r:4.3,ad:"ต.ปากโทก",     gm:"https://maps.app.goo.gl/ptPak"},
+  {br:"PT", nm:"PT อรัญญิก",             la:16.8169,ln:100.2999,fu:["D","95","91"],      ev:0,h:"เปิดบางเวลา",r:3.9,ad:"ต.อรัญญิก",   gm:"https://maps.app.goo.gl/ptAran"},
+  {br:"PT", nm:"PT พิษณุโลก 5",          la:16.8345,ln:100.3676,fu:["D","95","91","E20"],ev:1,h:"24 ชั่วโมง",r:4.6,ad:"ต.สมอแข",       gm:"https://maps.app.goo.gl/pt5"},
+  {br:"Shell",nm:"Shell ราเมศวร์",       la:16.8106,ln:100.2670,fu:["D","95","91"],ev:0,h:"24 ชั่วโมง", r:4.0,ad:"ถ.ราเมศวร์",       gm:"https://maps.google.com/?cid=10002997633098502730"},
+  {br:"Shell",nm:"Shell ดอนทอง",         la:16.8592,ln:100.3520,fu:["D","95","91"],ev:0,h:"24 ชั่วโมง", r:4.0,ad:"ต.ดอนทอง",         gm:"https://maps.google.com/?cid=10205519527662845880"},
+  {br:"Shell",nm:"Shell มิตรภาพ ซ.27",  la:16.8186,ln:100.2942,fu:["D","95","91"],ev:0,h:"06:00–21:30",r:4.3,ad:"ถ.มิตรภาพ ซ.27",   gm:"https://maps.google.com/?cid=15748828751542874435"},
+  {br:"Shell",nm:"Shell สิงหวัฒน์",      la:16.8263,ln:100.2551,fu:["D","95","91"],ev:0,h:"24 ชั่วโมง", r:4.3,ad:"ถ.สิงหวัฒน์",      gm:"https://maps.google.com/?cid=15705727626439290679"},
+  {br:"Shell",nm:"Shell ท่าทอง",         la:16.7984,ln:100.2139,fu:["D","95","91"],ev:0,h:"05:00–00:00",r:4.4,ad:"ต.ท่าทอง",         gm:"https://maps.google.com/?cid=7738775158029617715"},
+  {br:"Bangchak",nm:"Bangchak พิษณุโลก-สุโขทัย",la:16.8424,ln:100.2315,fu:["D","95","91"],ev:0,h:"24 ชั่วโมง",r:3.9,ad:"ถ.พิษณุโลก-สุโขทัย",gm:"https://maps.google.com/?cid=6324497970574448363"},
+  {br:"Bangchak",nm:"Bangchak พญาเสือ",  la:16.8259,ln:100.2688,fu:["D","95","91"],ev:1,h:"24 ชั่วโมง",r:4.4,ad:"ถ.พญาเสือ",         gm:"https://maps.google.com/?cid=4973144057051639559"},
+  {br:"Bangchak",nm:"Bangchak บรมไตรโลกนาถ",la:16.8027,ln:100.2505,fu:["D","95","91"],ev:0,h:"24 ชั่วโมง",r:4.4,ad:"ถ.บรมไตรโลกนาถ",gm:"https://maps.google.com/?cid=14365035122346418216"},
+  {br:"Bangchak",nm:"Bangchak M.T.S.P.", la:16.8116,ln:100.2611,fu:["D","95","91"],ev:0,h:"04:00–22:00",r:4.2,ad:"ถ.บรมไตรโลกนาถ",  gm:"https://maps.google.com/?cid=10607919134011782522"},
+  {br:"Caltex",nm:"Caltex ไผ่ชุมแสง",   la:16.8433,ln:100.2314,fu:["D","95","91"],ev:0,h:"05:00–22:00",r:4.1,ad:"ต.ไผ่ชุมแสง",      gm:"https://maps.google.com/?cid=12476260579288963999"},
+  {br:"Caltex",nm:"Caltex บ้านกร่าง",   la:16.8679,ln:100.2111,fu:["D","95","91"],ev:0,h:"06:00–18:00",r:4.5,ad:"ต.บ้านกร่าง",      gm:"https://maps.google.com/?cid=7176090918405240969"},
+];
+
+/* ─── STATE ─── */
+var curBrand = 'ALL';
+var curFuels = [];   // multi-select fuel list
+
+/* ─── MAP ─── */
+function setMapTop(){
+  document.getElementById('map').style.top = document.getElementById('bar').offsetHeight+'px';
+}
+window.addEventListener('resize', setMapTop);
+
+var map = L.map('map',{center:[16.810,100.266],zoom:13,zoomControl:false});
+L.control.zoom({position:'bottomright'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{
+  attribution:'&copy; OSM &copy; CARTO',subdomains:'abcd',maxZoom:19
+}).addTo(map);
+L.circle([16.820,100.266],{radius:15000,color:'#60a5fa',opacity:.25,weight:1.5,fill:true,fillColor:'#60a5fa',fillOpacity:.03,dashArray:'8 6'}).addTo(map);
+L.circleMarker([16.820,100.266],{radius:6,color:'#38bdf8',fillColor:'#38bdf8',fillOpacity:.9,weight:2})
+  .bindTooltip('ใจกลางเมืองพิษณุโลก',{permanent:false,direction:'right',offset:[8,0],className:'rlab'}).addTo(map);
+
+/* ─── MARKERS ─── */
+var mkrs=[];
+
+function buildIcon(s, activeFuels){
+  var bc=B[s.br];
+  var hasFuelMatch = activeFuels.length>0;
+  var dots=s.fu.slice(0,3).map(function(f){
+    var hi=hasFuelMatch && activeFuels.indexOf(f)>=0;
+    return '<div class="fdot'+(hi?' hi':'')+'" style="background:'+FC[f]+'"></div>';
+  }).join('');
+  var ev=s.ev?'<div class="evbg">⚡</div>':'';
+  var dimClass = (!stationMatches(s) ? ' dim' : (hasFuelMatch ? ' match' : ''));
+  return L.divIcon({
+    className:'',
+    html:'<div class="mi'+dimClass+'" style="background:'+bc.bg+';border-color:'+bc.bo+'">'
+        +'<div class="fdots">'+dots+'</div>'+bc.tx+ev+'</div>',
+    iconSize:[32,32],iconAnchor:[16,28],popupAnchor:[0,-28]
+  });
+}
+
+function buildPopup(s, activeFuels){
+  var bc=B[s.br];
+  var stars='★'.repeat(Math.round(s.r))+'☆'.repeat(5-Math.round(s.r));
+  var chips=s.fu.map(function(f){
+    var hi=activeFuels.length>0 && activeFuels.indexOf(f)>=0;
+    return '<span class="fc'+(hi?' hi':'')+'" style="background:'+FC[f]+'18;border:1.5px solid '+FC[f]+(hi?'cc':'44')+';color:'+FC[f]+(hi?';box-shadow:0 0 8px rgba('+FCR[f]+',.5)':'')+'">'
+          +'<span style="width:6px;height:6px;border-radius:50%;background:'+FC[f]+';display:inline-block"></span>'
+          +FL[f]+'</span>';
+  }).join('');
+  var evHi=activeFuels.indexOf('EV')>=0;
+  var evb=s.ev?'<span class="evc'+(evHi?' hi':'')+'">⚡ EV Charging</span>':'';
+  return '<div class="pu">'
+    +'<div class="pub" style="color:'+bc.co+'">'+s.br+'</div>'
+    +'<div class="pun">'+s.nm+'</div>'
+    +'<div class="pua">📍 '+s.ad+'</div>'
+    +'<div class="pum"><span>🕐 '+s.h+'</span><span style="color:#fbbf24">'+stars+' '+s.r+'</span></div>'
+    +'<div class="puf">'+chips+evb+'</div>'
+    +'<a class="gmlink" href="'+s.gm+'" target="_blank" rel="noopener">🗺 เปิดใน Google Maps</a>'
+    +'</div>';
+}
+
+ST.forEach(function(s){
+  var m=L.marker([s.la,s.ln],{icon:buildIcon(s,[]),title:s.nm,riseOnHover:true})
+    .bindPopup(buildPopup(s,[]),{maxWidth:290,minWidth:230});
+  m._s=s; m.addTo(map); mkrs.push(m);
+});
+
+/* ─── MATCH CHECK ─── */
+function stationMatches(s){
+  if(curBrand!=='ALL' && s.br!==curBrand) return false;
+  if(curFuels.length>0){
+    for(var i=0;i<curFuels.length;i++){
+      var f=curFuels[i];
+      if(f==='EV'){ if(!s.ev) return false; }
+      else         { if(s.fu.indexOf(f)<0) return false; }
+    }
+  }
+  return true;
+}
+
+/* ─── APPLY ─── */
+function applyFilters(){
+  var n=0;
+  mkrs.forEach(function(m){
+    var s=m._s, ok=stationMatches(s);
+    m.setIcon(buildIcon(s, curFuels));
+    m.setPopupContent(buildPopup(s, curFuels));
+    if(ok){ if(!map.hasLayer(m)) map.addLayer(m); n++; }
+    else  { if(map.hasLayer(m))  map.removeLayer(m); }
+  });
+  document.getElementById('cnt').textContent = n+' สาขา';
+  document.getElementById('nores').style.display = (n===0)?'block':'none';
+  // legend sync
+  ['D','95','91','E20','E85','EV'].forEach(function(f){
+    var el=document.getElementById('lf-'+f);
+    if(el) el.classList.toggle('on', curFuels.indexOf(f)>=0);
+  });
+}
+
+/* ─── BRAND FILTER ─── */
+function setBrand(b){
+  curBrand=b;
+  document.querySelectorAll('[id^="fb-"]').forEach(function(el){el.classList.remove('on')});
+  document.getElementById('fb-'+b).classList.add('on');
+  applyFilters();
+}
+
+/* ─── FUEL FILTER ─── */
+function toggleFuel(f){
+  var i=curFuels.indexOf(f);
+  if(i>=0) curFuels.splice(i,1);
+  else curFuels.push(f);
+  var btn=document.getElementById('ff-'+f);
+  if(btn) btn.classList.toggle('on', curFuels.indexOf(f)>=0);
+  applyFilters();
+}
+
+function clearFuels(){
+  curFuels=[];
+  ['D','95','91','E20','E85','EV'].forEach(function(f){
+    var btn=document.getElementById('ff-'+f);
+    if(btn) btn.classList.remove('on');
+  });
+  applyFilters();
+}
+
+setTimeout(setMapTop, 80);
+</script>
+</body>
+</html>
