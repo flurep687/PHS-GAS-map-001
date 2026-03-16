@@ -3,7 +3,7 @@
 แผนที่ interactive ปั๊มน้ำมันในจังหวัดพิษณุโลก รัศมี 15 กม. จากใจกลางเมือง  
 รวม **26 สาขา** — PTT · PT · Shell · Bangchak · Caltex
 
-🔗 **ดูแผนที่ออนไลน์**: `https://YOUR_USERNAME.github.io/phitsanulok-gasmap`
+🔗 **ดูแผนที่ออนไลน์**: `https://flurep678.github.io/phitsanulok-gasmap`
 
 ---
 
